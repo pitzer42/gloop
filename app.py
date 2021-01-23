@@ -32,9 +32,13 @@ async def details(request):
     return web.Response(text=str(_id))
 
 
+def create_route_get(path, handler):
+    return web.get(path, handler, name=handler.__name__)
+
+
 app = web.Application()
 app.add_routes([
-    web.get('/', index, name=index.__name__),
-    web.get('/{_id}', create_or_details, name=create_or_details.__name__),
+    create_route_get('/', index),
+    create_route_get('/{_id}', create_or_details),
 ])
 web.run_app(app)
