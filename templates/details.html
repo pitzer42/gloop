@@ -1,7 +1,8 @@
 <html>
     <script>
+        let socket;
         function join(){
-            const socket = new WebSocket('wss://8080-cbeacebb-2e51-4659-a9d5-8d9fab791a55.ws-us03.gitpod.io/{{_id}}/join');
+            socket = new WebSocket('wss://8080-cbeacebb-2e51-4659-a9d5-8d9fab791a55.ws-us03.gitpod.io/{{_id}}/join');
             // Connection opened
             socket.addEventListener('open', function (event) {
                 socket.send('Hello Server!');
