@@ -1,0 +1,20 @@
+<html>
+    <script>
+        function join(){
+            const socket = new WebSocket('wss://8080-cbeacebb-2e51-4659-a9d5-8d9fab791a55.ws-us03.gitpod.io/{{_id}}/join');
+            // Connection opened
+            socket.addEventListener('open', function (event) {
+                socket.send('Hello Server!');
+            });
+
+            // Listen for messages
+            socket.addEventListener('message', function (event) {
+                console.log('Message from server ', event.data);
+            });
+        }
+    </script>
+    
+{{_id}}
+<input type='button' value='join' onclick='join()'/>
+
+</html>

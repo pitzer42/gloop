@@ -1,10 +1,25 @@
 import jinja2
+import aiohttp
 from aiohttp import web
 
 TEAMPLATES_PATH = 'templates'
 TEAMPLATE_EXTENTION = '.html'
 
-db = []
+db = [
+    dict(
+        _id = 'dummy',
+        _description = 'dummy room',
+        _size = 1
+    )
+]
+
+
+async def get_or_404(_id):
+    selected_item = None
+    for item in db:
+        if item['_id'] == _id:
+            return item
+    raise web.HTTPNotFound()
 
 
 template_loader = jinja2.FileSystemLoader(searchpath=TEAMPLATES_PATH)
@@ -42,24 +57,47 @@ async def create(request):
     
     if request.method == 'POST':
         data = await request.post()
-        _id = data['_id']
-        _description = data['_description']
-        _size = data['_size']
-        db.append((_id, _description, _size))
+        data = dict(data)
+        db.append(data)
         return redirect(request, index)
 
 
 async def details(request):
     _id = request.match_info['_id']
-    room = None
-    for item in db:
-        if item[0] == _id:
-            room = item
-            break
-    if room:
-        return web.Response(text=str(_id))
-    raise web.HTTPNotFound()
+    selected_item = await get_or_404(_id)
+    template = template_for(details)
+    rendered = template.render(selected_item)
+    return html_response(rendered)
 
+
+async def join(request):
+    _id = request.match_info['_id']
+    selected_item = await get_or_404(_id)
+
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+
+    if '_counter' not in selected_item:
+        selected_item['_counter'] = 0
+    selected_item['_counter'] += 1
+    
+    if selected_item['_counter'] == selected_item['_size']:
+        await ws.send_str('starting room')
+
+    async for msg in ws:
+        print('client says: ' + str(msg[1]))
+        if msg.type == aiohttp.WSMsgType.TEXT:
+            if msg.data == 'close':
+                await ws.close()
+            else:
+                await ws.send_str(msg.data + '/answer')
+        elif msg.type == aiohttp.WSMsgType.ERROR:
+            print('ws connection closed with exception %s' %
+                  ws.exception())
+
+    print('websocket connection closed')
+
+    return ws
 
 def create_route_get(path, handler):
     return web.get(path, handler, name=handler.__name__)
@@ -75,6 +113,7 @@ app.add_routes([
     create_route_get('/create', create),
     create_route_post('/create', create),
     create_route_get('/{_id}', details),
+    create_route_get('/{_id}/join', join)
 ])
 
 web.run_app(app)
