@@ -1,0 +1,8 @@
+<html>
+<ul>
+    {%for item in items %}
+    <li><a href={{ item[0] }}>{{ item }}</a></li>
+    {% endfor %}
+</ul>
+<a href={{create_view_url}}>create</a>
+</html>
