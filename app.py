@@ -52,8 +52,8 @@ async def join(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    channel = RedisChannel(_id, '')
-    channel2 = RedisChannel(_id, '')
+    channel = RedisChannel(_id, 'redis://127.0.0.1:6379')
+    channel2 = RedisChannel(_id, 'redis://127.0.0.1:6379')
     await channel.connect()
     await channel2.connect()
 
