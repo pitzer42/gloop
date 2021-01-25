@@ -1,72 +1,88 @@
+import asyncio
 import aiohttp
 from aiohttp import web
 
+from entities.room import Room
+from storage.memory.rooms import InMemoryRooms
 
-db = [
-    dict(
+rooms = InMemoryRooms.create([
+    Room(
         _id='foo',
         _description='dummy room'
     ),
-    dict(
+    Room(
         _id='bar',
         _description='dummy room'
     )
-]
+])
 
 
-async def featch_or_fail(_id):
-    for item in db:
-        if item['_id'] == _id:
-            return item
-    raise web.HTTPNotFound()
+async def get_or_404(repo, key):
+    try:
+        item = await repo.get(key)
+    except KeyError:
+        raise web.HTTPNotFound()
 
 
 async def index(request):
-    return web.json_response(db)
+    room_list = await rooms.all()
+    return web.json_response(room_list)
 
 
 async def create(request):
     data = await request.post()
-    data = dict(data)
-    db.append(data)
-    request.match_info['_id'] = data['_id']
+    room = Room(*data)
+    rooms.add(room)
+    request.match_info['_id'] = room._id
     return await details(request)
 
 
 async def details(request):
     _id = request.match_info['_id']
-    selected_item = await featch_or_fail(_id)
-    return web.json_response(selected_item)
+    selected_room = await get_or_404(rooms, _id)
+    room_dict = selected_room.to_dict()
+    return web.json_response(room_dict)
 
 
 async def join(request):
     _id = request.match_info['_id']
-    selected_item = await featch_or_fail(_id)
+    selected_item = await get_or_404(rooms, _id)
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    if _id not in request.app:
-        request.app[_id] = []
+    channel = await create_client_channel()
 
-    request.app[_id].append(ws)
+    async def listen_to_channel():
+        for msg in channel:
+            await ws.send_str(msg)
+
+    create_background_task(listen_to_channel())
+    
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == '<close>':
-                await ws.close()
-            else:
-                for client in request.app[_id]:
-                    if client != ws:
-                        await client.send_str(msg.data)
+            await channel.send(msg.data)
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-    print('websocket connection closed')
+            print('connection closed with exception %s' % ws.exception())
+    print('connection closed')
     return ws
 
 
+def create_background_task(coroutine):
+    task = asyncio.create_task(coroutine)
+    app['background_tasks'].append(task)
+    return task
+
+async def cancel_background_tasks():
+    for task in app['background_tasks']:
+        task.cancel()
+        await task
+
+
 app = web.Application()
+app['background_tasks'] = []
+app.on_cleanup.append(cancel_background_tasks)
 
 app.add_routes([
     web.get('/', index),
