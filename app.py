@@ -52,20 +52,28 @@ async def join(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    channel = RedisChannel(_id, '127.0.0.1')
+    channel = RedisChannel(_id, '')
+    channel2 = RedisChannel(_id, '')
     await channel.connect()
+    await channel2.connect()
+
+    t_id = str(id(ws))
 
     async def listen_to_channel():
         while True:
-            msg = await channel.receive()
-            ws.send_str(msg)
+            print('listening to redis channel ' + t_id)
+            redis_msg = await channel.receive()
+            await ws.send_str(redis_msg)
 
-    create_background_task(listen_to_channel())
-    
+    task = asyncio.create_task(listen_to_channel())
+    app['background_tasks'].append(task)
+
+
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
-            await channel.send(msg.data)
+            await channel2.send(msg.data)
+            print(t_id + ' msg sent')
         elif msg.type == aiohttp.WSMsgType.ERROR:
             print('connection closed with exception %s' % ws.exception())
     print('connection closed')
