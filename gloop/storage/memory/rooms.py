@@ -1,5 +1,5 @@
-from entities.room import Room
-from repositories.rooms import Rooms
+from gloop.entities.room import Room
+from gloop.repositories.rooms import Rooms
 
 
 class InMemoryRooms(Rooms):

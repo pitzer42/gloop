@@ -1,6 +1,12 @@
 from abc import ABC
 
 
+async def relay_loop(receive, send):
+    while True:
+        msg = await receive()
+        await send(msg)
+
+
 class Channel(ABC):
 
     async def __aenter__(self):

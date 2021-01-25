@@ -1,6 +1,6 @@
 from aiohttp.web import WebSocketResponse
 
-from channels import Channel
+from gloop.channels import Channel
 
 
 class WebSocketChannel(Channel):

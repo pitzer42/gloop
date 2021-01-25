@@ -1,7 +1,7 @@
-from abc import ABC
+from gloop.repositories import Repository
 
 
-class Rooms(ABC):
+class Rooms(Repository):
     
     async def add(self, room):
         raise NotImplementedError()
