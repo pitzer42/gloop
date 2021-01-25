@@ -4,8 +4,9 @@ from aiohttp import web
 
 from entities.room import Room
 from storage.memory.rooms import InMemoryRooms
+from channels.redis import RedisChannel
 
-rooms = InMemoryRooms.create([
+rooms = InMemoryRooms.create(initial_load=[
     Room(
         _id='foo',
         _description='dummy room'
@@ -19,13 +20,13 @@ rooms = InMemoryRooms.create([
 
 async def get_or_404(repo, key):
     try:
-        item = await repo.get(key)
+        return await repo.get(key)
     except KeyError:
         raise web.HTTPNotFound()
 
 
 async def index(request):
-    room_list = await rooms.all()
+    room_list = [room.to_dict() for room in await rooms.all()]
     return web.json_response(room_list)
 
 
@@ -51,11 +52,13 @@ async def join(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    channel = await create_client_channel()
+    channel = RedisChannel(_id, '127.0.0.1')
+    await channel.connect()
 
     async def listen_to_channel():
-        for msg in channel:
-            await ws.send_str(msg)
+        while True:
+            msg = await channel.receive()
+            ws.send_str(msg)
 
     create_background_task(listen_to_channel())
     
@@ -74,7 +77,7 @@ def create_background_task(coroutine):
     app['background_tasks'].append(task)
     return task
 
-async def cancel_background_tasks():
+async def cancel_background_tasks(app):
     for task in app['background_tasks']:
         task.cancel()
         await task

@@ -9,14 +9,14 @@ class InMemoryRooms(Rooms):
     @staticmethod
     def create(initial_load=[]):
         for item in initial_load:
-            __memory__[item._id] = item.copy()
+            InMemoryRooms.__memory__[item._id] = item.copy()
         return InMemoryRooms()
 
     async def add(self, room: Room):
-        __memory__[room._id] = room.copy()
+        InMemoryRooms.__memory__[room._id] = room.copy()
 
     async def get(self, _id):
-        return __memory__[_id].copy()
+        return InMemoryRooms.__memory__[_id].copy()
 
     async def all(self):
-        return [room.copy() for room in __memory__.values()]
+        return [room.copy() for room in InMemoryRooms.__memory__.values()]

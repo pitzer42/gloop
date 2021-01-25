@@ -12,7 +12,7 @@ class RedisChannel(Channel):
         self._redis: aioredis.Redis = None
 
     async def connect(self):
-        self._redis = await aioredis.create_redis(self._address)
+        self._redis = await aioredis.create_redis(self._address, db='gloopdb', password='Dev#123123')
 
     async def send(self, message: str):
         # XADD self._topic * message {message}
