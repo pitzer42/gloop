@@ -1,0 +1,21 @@
+<html>
+
+<script>
+
+    let socket = new WebSocket("wss://8080-cbeacebb-2e51-4659-a9d5-8d9fab791a55.ws-us03.gitpod.io/rooms/foo/join");
+
+    socket.addEventListener('message', function (event) {
+        console.log('Message from server ', event.data);
+        document.getElementById("txtOutput").innerHTML += "<br/>" + event.data
+    });
+
+    function send() {
+        msg = document.getElementById("txtMessage").value
+        socket.send(msg + "")
+    }
+</script>
+<input id="txtMessage" type="text" />
+<input id="btnSend" type="button" value="send" onclick="send()" />
+<br/>
+<a id='txtOutput'></a>
+</html>

@@ -1,16 +1,17 @@
+import asyncio
+
+from aiohttp import web
+
+from gloop.channels import relay_loop
+from gloop.channels.web_socket import WebSocketChannel
+
+
 from gloop.repositories.rooms import Rooms
 from gloop.api.features.repo_api import get_or_404
 from gloop.api.features.background_tasks import create_background_task
 
-from gloop.channels.web_socket import WebSocketChannel
-from gloop.channels import relay_loop
 
-from aiohttp import web
-
-import asyncio
-
-
-class Join:
+class JoinRoom:
 
     def __init__(self, rooms: Rooms, channel_factory: callable):
         super().__init__()

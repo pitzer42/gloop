@@ -1,17 +1,20 @@
 import asyncio
 import aiohttp
+import functools
 
 from aiohttp import web
 
+from gloop.entities.room import Room
+from gloop.storage.memory.rooms import InMemoryRooms
+
 from gloop.api.features import background_tasks
 from gloop.api.features.repo_api import RepositoryAPI
-from gloop.api.features.join import Join
+from gloop.api.features.join import JoinRoom
 
-from gloop.storage.memory.rooms import InMemoryRooms
-from gloop.entities.room import Room
 
 from gloop.channels.redis import RedisChannel
 
+STATIC_FILES_PATH = './static'
 REDIS_URI = 'redis://127.0.0.1:6379'
 
 
@@ -31,14 +34,15 @@ rooms = InMemoryRooms.create(initial_load=[
 ])
 
 rooms_api = RepositoryAPI(rooms, Room)
-
-join_obj = Join(rooms, lambda topic: RedisChannel(topic, REDIS_URI))
+channel_factory = functools.partial(RedisChannel, REDIS_URI)
+join_room = JoinRoom(rooms, channel_factory)
 
 app.add_routes([
-    web.get('/', rooms_api.all),
-    web.post('/create', rooms_api.add),
-    web.get('/{_id}', rooms_api.get),
-    web.get('/{_id}/join', join_obj.join),
+    web.get('/rooms', rooms_api.all),
+    web.post('/rooms/create', rooms_api.add),
+    web.get('/rooms/{_id}', rooms_api.get),
+    web.get('/rooms/{_id}/join', join_room.join),
+    web.static('/', STATIC_FILES_PATH)
 ])
 
 web.run_app(app)

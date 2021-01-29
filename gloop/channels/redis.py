@@ -5,7 +5,7 @@ from gloop.channels import Channel
 
 class RedisChannel(Channel):
 
-    def __init__(self, topic: str, address: str):
+    def __init__(self, address: str, topic: str):
         super(RedisChannel, self).__init__()
         self._topic: str = topic
         self._address: str = address
