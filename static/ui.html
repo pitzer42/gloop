@@ -6,7 +6,7 @@
 
     socket.addEventListener('message', function (event) {
         console.log('Message from server ', event.data);
-        document.getElementById("txtOutput").innerHTML += "<br/>" + event.data
+        document.getElementById("txtOutput").innerText += "\n" + event.data
     });
 
     function send() {

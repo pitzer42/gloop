@@ -1,3 +1,4 @@
+from aiohttp import WSMsgType
 from aiohttp.web import WebSocketResponse
 
 from gloop.channels import Channel
@@ -19,4 +20,9 @@ class WebSocketChannel(Channel):
         await self._ws.send_str(str(message))
 
     async def receive(self) -> str:
-        return await self._ws.receive_str()
+        txt_message = None
+        while txt_message is None:
+            message = await self._ws.receive()
+            if message.type == WSMsgType.TEXT:
+                txt_message = str(message.data)
+        return txt_message

@@ -1,6 +1,8 @@
+import os
 import asyncio
 import aiohttp
 import functools
+
 
 from aiohttp import web
 
@@ -23,9 +25,11 @@ background_tasks.install(app)
 
 channel_factory = functools.partial(RedisChannel, REDIS_URI)
 
+
 def room_factory(*args, **kwargs):
     room_channel = channel_factory(kwargs['_id'])
     return Room(room_channel, *args, **kwargs)
+
 
 rooms = InMemoryRooms.create(initial_load=[
     room_factory(
@@ -41,12 +45,18 @@ rooms = InMemoryRooms.create(initial_load=[
 join_room = JoinRoom(rooms, channel_factory)
 rooms_api = RepositoryAPI(rooms, room_factory)
 
+
+async def client_ui(request):
+    client_ui_path = os.path.join(STATIC_FILES_PATH, 'ui.html')
+    return web.FileResponse(client_ui_path)
+
+
 app.add_routes([
     web.get('/rooms', rooms_api.all),
     web.post('/rooms/create', rooms_api.add),
     web.get('/rooms/{_id}', rooms_api.get),
     web.get('/rooms/{_id}/join', join_room.join),
-    web.static('/', STATIC_FILES_PATH)
+    web.get('/', client_ui)
 ])
 
 web.run_app(app)
