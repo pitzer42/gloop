@@ -16,12 +16,13 @@ class RepositoryAPI:
         self._entity_factory = entity_factory
 
     async def all(self, request):
-        entity_list = [entity.to_dict() for entity in await self._repo.all()]
+        entities = await self._repo.all()
+        entity_list = [entity.to_dict() for entity in entities]
         return web.json_response(entity_list)
 
     async def add(self, request):
         data = await request.post()
-        entity = self._entity_factory(*data)
+        entity = self._entity_factory(**data)
         entity_id = await self._repo.add(entity)
         response_json = dict(_id=entity_id)
         return web.json_response(response_json)
