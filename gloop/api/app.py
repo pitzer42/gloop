@@ -19,23 +19,27 @@ REDIS_URI = 'redis://127.0.0.1:6379'
 
 
 app = web.Application()
-
 background_tasks.install(app)
 
+channel_factory = functools.partial(RedisChannel, REDIS_URI)
+
+def room_factory(*args, **kwargs):
+    room_channel = channel_factory(kwargs['_id'])
+    return Room(room_channel, *args, **kwargs)
+
 rooms = InMemoryRooms.create(initial_load=[
-    Room(
+    room_factory(
         _id='foo',
         _description='dummy room'
     ),
-    Room(
+    room_factory(
         _id='bar',
         _description='dummy room'
     )
 ])
 
-rooms_api = RepositoryAPI(rooms, Room)
-channel_factory = functools.partial(RedisChannel, REDIS_URI)
 join_room = JoinRoom(rooms, channel_factory)
+rooms_api = RepositoryAPI(rooms, room_factory)
 
 app.add_routes([
     web.get('/rooms', rooms_api.all),
